@@ -9,31 +9,22 @@ the arithmetic.
 
 ## What it does
 
-Three toggleable representations:
-
-- **Graph view** — the geometric picture: an animated, zoomable (scroll wheel or +/− buttons)
-  2D grid transformation with basis vectors, eigenlines, and determinant area shading.
-- **Matrix view** — the actual matrices: color-coded, step-by-step arithmetic with a
-  clickable start-to-finish timeline of every step, a legend, and an explicit explanation
-  per step.
-- **Sandbox** — a whiteboard-white rendering of the same walkthrough, for teaching: driven by
-  the same expression box and objects as the other views. Type matrices inline
-  (`[1 2; 3 4] * [5; 6]`) and the equation previews live exactly as typed — rows stay rows,
-  columns stay columns — then Go steps through it in color.
+A whiteboard for teaching linear algebra. The left panel defines named matrices and vectors
+(each rendered live on the whiteboard's Objects shelf) and takes an expression; the
+whiteboard previews the equation exactly as typed, then Go plays a color-coded,
+step-by-step walkthrough to its conclusion — with a clickable start-to-finish timeline,
+a legend, and an explicit explanation per step. Editing an object re-runs the current
+expression with the new numbers.
 
 Operations:
 
-- **Matrix multiplication** — `A*B` plays the composition stage by stage on the graph
-  (right to left, the way composition actually works) and fills the product in cell by cell
-  as color-coded row·column dot products in the matrix view.
-- **Matrix–vector products** — `A*v` shows the vector riding the grid transformation.
-- **Eigenvectors & eigenvalues** — `eig(A)` draws the invariant eigenlines and shows
-  eigenvectors staying on their span while scaling by λ; the matrix view verifies
+- **Matrix multiplication** — `A*B` (or `A*v`) fills the product in cell by cell as
+  color-coded row·column dot products, with the full arithmetic spelled out.
+- **Eigenvectors & eigenvalues** — `eig(A)` reports λ and the eigenvectors, then verifies
   `A·v = λ·v` numerically. Complex, repeated, and defective cases are reported honestly.
 - **Elementary row operations** — `rref(M)` plays the reduction one elementary row operation
   at a time (`R2 ← R2 − 2·R1`, swaps, scalings) with pivot rows and pivot entries highlighted.
-- **Determinants** — `det(A)` walks the `a·d − b·c` formula with diagonal highlights and
-  shades the unit square's image on the graph.
+- **Determinants** — `det(A)` walks the `a·d − b·c` formula with diagonal highlights.
 - **More** — entry-by-entry addition/subtraction, scalar multiplication, transposition, and
   general expressions: `2A + B`, `inv(A)*A`, `B^4`, parentheses, implicit multiplication (`2A`).
 
@@ -50,14 +41,17 @@ Operations:
 | `eig(A)` | eigenvalues/eigenvectors of a 2×2, drawn on the plane |
 | `[1 2; 3 4]` | inline matrix literal — spaces/commas between entries, `;` between rows |
 
-The plane view animates 2×2 matrices and 2-vectors; anything bigger still computes and
-animates numerically in the steps view.
-
 ## Stack
 
-Zero-dependency vanilla ES modules + a `<canvas>` renderer. No build step, no backend,
-no runtime network calls — everything computes in the browser. Deployed on GitHub Pages
-straight from `main`.
+Zero-dependency vanilla JavaScript in a single module (`js/app.js`). No build step, no
+backend, no runtime network calls — everything computes in the browser. Deployed on GitHub
+Pages straight from `main`.
+
+**Deploying a change**: bump the `?v=` query on `styles.css` and `js/app.js` in
+`index.html`. GitHub Pages caches each file for ~10 minutes independently, so without the
+version bump a returning browser can mix a new HTML with stale JS (or vice versa) and
+break the page. The single-file layout exists for the same reason — module imports can't
+skew against each other if there's only one module.
 
 ## Local dev
 

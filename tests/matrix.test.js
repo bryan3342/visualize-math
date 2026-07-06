@@ -1,6 +1,8 @@
 import { expect, test } from 'bun:test';
-import { multiply, det, inverse, rrefSteps, eigen2x2, matPow, transpose } from '../js/matrix.js';
-import { parse, evaluate, flattenProduct } from '../js/parser.js';
+import {
+  multiply, det, inverse, rrefSteps, eigen2x2, matPow, transpose,
+  parse, evaluate, flattenProduct,
+} from '../js/app.js';
 
 const A = [[2, 1], [1, 2]];
 const env = new Map([
