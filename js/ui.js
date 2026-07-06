@@ -11,14 +11,13 @@ export class ObjectsPanel {
     root.innerHTML = `
       <div class="objects-list"></div>
       <div class="objects-add">
-        <div class="add-row">Matrix
-          <select class="add-rows">${sizeOpts(1, 6, 2)}</select> ×
-          <select class="add-cols">${sizeOpts(1, 6, 2)}</select>
-          <button class="add-matrix">Add</button>
+        <div class="add-row">
+          <button class="add-matrix">+ Matrix</button>
+          <select class="add-rows">${sizeOpts(1, 6, 2)}</select><span class="dim-sep">×</span><select class="add-cols">${sizeOpts(1, 6, 2)}</select>
         </div>
-        <div class="add-row">Vector, dim
-          <select class="add-dim">${sizeOpts(2, 6, 2)}</select>
-          <button class="add-vector">Add</button>
+        <div class="add-row">
+          <button class="add-vector">+ Vector</button>
+          <select class="add-dim">${sizeOpts(2, 6, 2)}</select><span class="dim-sep">entries</span>
         </div>
       </div>`;
     this.list = root.querySelector('.objects-list');

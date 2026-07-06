@@ -17,46 +17,54 @@
   <main>
     <aside class="panel">
       <section>
-        <h2>Objects</h2>
-        <div id="objects"></div>
-      </section>
-      <section>
         <h2>Expression</h2>
         <div class="expr-row">
           <input id="expr" spellcheck="false" autocomplete="off" placeholder="e.g. A*B, eig(A), rref(M)">
           <button id="run">Go</button>
         </div>
-        <div class="chips">
-          <button class="chip">A*B</button>
-          <button class="chip">A*v</button>
-          <button class="chip">eig(A)</button>
-          <button class="chip">eig(B)</button>
-          <button class="chip">rref(M)</button>
-          <button class="chip">det(A)</button>
-          <button class="chip">inv(A)*A</button>
-          <button class="chip">B^4</button>
-        </div>
         <div id="status"></div>
-        <div id="result"></div>
       </section>
-      <section class="help">
-        <h2>Syntax</h2>
-        <p><code>*</code> <code>+</code> <code>-</code> <code>/</code> <code>^</code> with scalars and named objects, plus
-          <code>det(A)</code>, <code>inv(A)</code>, <code>trans(A)</code>, <code>rref(M)</code>, <code>eig(A)</code>.
-          Implicit multiplication works too: <code>2A</code>, <code>A(B+B)</code>.</p>
-        <p class="muted">The Plane view animates 2×2 matrices and 2‑vectors — products like <code>A*B*v</code> play stage by stage,
-          right to left. Products and <code>rref</code> also get numeric step‑by‑step animations in the Steps view.</p>
+      <section>
+        <h2>What you can do</h2>
+        <div class="op-list">
+          <button class="op-item" data-expr="A*B"><span>Multiply matrices</span><code>A*B</code></button>
+          <button class="op-item" data-expr="A*v"><span>Transform a vector</span><code>A*v</code></button>
+          <button class="op-item" data-expr="eig(A)"><span>Eigenvectors &amp; eigenvalues</span><code>eig(A)</code></button>
+          <button class="op-item" data-expr="rref(M)"><span>Row reduce, step by step</span><code>rref(M)</code></button>
+          <button class="op-item" data-expr="det(A)"><span>Determinant &amp; area</span><code>det(A)</code></button>
+          <button class="op-item" data-expr="inv(A)*A"><span>Inverse undoes A</span><code>inv(A)*A</code></button>
+          <button class="op-item" data-expr="trans(A)"><span>Transpose</span><code>trans(A)</code></button>
+          <button class="op-item" data-expr="A+B"><span>Add matrices</span><code>A+B</code></button>
+        </div>
       </section>
+      <section>
+        <h2>Objects</h2>
+        <div id="objects"></div>
+      </section>
+      <details class="syntax">
+        <summary>Syntax reference</summary>
+        <p><code>*</code> <code>+</code> <code>-</code> <code>/</code> <code>^</code> with scalars and named objects
+          (<code>B^4</code>, <code>A^-1</code>, <code>2A + B</code>), plus <code>det()</code>, <code>inv()</code>,
+          <code>trans()</code>, <code>rref()</code>, <code>eig()</code>. Implicit multiplication works:
+          <code>2A</code>, <code>A(B+B)</code>.</p>
+        <p>Graph view animates 2×2 matrices and 2‑vectors (products play right to left). Matrix view works for
+          any size and shows the arithmetic with color-coded steps.</p>
+      </details>
     </aside>
     <section class="stage">
       <div class="tabs">
-        <button class="tab active" data-tab="plane">Plane</button>
-        <button class="tab" data-tab="steps">Steps</button>
+        <button class="tab active" data-tab="graph">Graph</button>
+        <button class="tab" data-tab="matrix">Matrix</button>
       </div>
-      <div id="plane-wrap">
+      <div id="graph-wrap">
         <div class="canvas-holder">
           <canvas id="plane"></canvas>
           <div id="plane-message" hidden></div>
+          <div class="zoom-controls">
+            <button id="zoom-in" title="Zoom in">+</button>
+            <button id="zoom-out" title="Zoom out">−</button>
+            <button id="zoom-reset" title="Reset zoom">⌖</button>
+          </div>
         </div>
         <div class="plane-controls">
           <button id="plane-play" title="Play / pause">▶</button>
@@ -70,8 +78,8 @@
           <span id="plane-stage"></span>
         </div>
       </div>
-      <div id="steps-wrap" hidden>
-        <div id="steps"></div>
+      <div id="matrix-wrap" hidden>
+        <div id="matrixview"></div>
       </div>
     </section>
   </main>

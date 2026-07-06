@@ -39,6 +39,8 @@ test('rrefSteps reduces and records elementary operations', () => {
   expect(result).toEqual([[1, 2, 0], [0, 0, 1], [0, 0, 0]]);
   expect(steps.length).toBeGreaterThan(0);
   expect(steps.every((s) => ['swap', 'scale', 'add'].includes(s.type))).toBe(true);
+  expect(steps.every((s) => Array.isArray(s.pivotAt) && s.pivotAt.length === 2)).toBe(true);
+  expect(steps.filter((s) => s.type === 'add').every((s) => Number.isInteger(s.target) && Number.isInteger(s.source))).toBe(true);
   expect(steps[steps.length - 1].after).toEqual(result);
 });
 

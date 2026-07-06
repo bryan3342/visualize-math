@@ -4,6 +4,7 @@ import { fmt } from './matrix.js';
 
 const I2 = [[1, 0], [0, 1]];
 const LEG_MS = 1800;
+const BASE_UNIT = 56;
 
 const C = {
   gridFaint: 'rgba(148, 163, 184, 0.12)',
@@ -37,7 +38,7 @@ export class Plane {
     this.progress = 1;
     this.playing = false;
     this.speed = 1;
-    this.unit = 56;
+    this.unit = BASE_UNIT;
     this.raf = 0;
     this.lastTs = 0;
 
@@ -50,6 +51,13 @@ export class Plane {
       this.render();
     });
     controls.speed.addEventListener('change', () => { this.speed = Number(controls.speed.value); });
+    if (controls.zoomIn) controls.zoomIn.addEventListener('click', () => this.zoomBy(1.25));
+    if (controls.zoomOut) controls.zoomOut.addEventListener('click', () => this.zoomBy(1 / 1.25));
+    if (controls.zoomReset) controls.zoomReset.addEventListener('click', () => { this.unit = BASE_UNIT; this.render(); });
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.zoomBy(Math.exp(-e.deltaY * 0.0012));
+    }, { passive: false });
     this.resize();
   }
 
@@ -97,6 +105,11 @@ export class Plane {
     this.controls.play.textContent = '▶';
   }
 
+  zoomBy(f) {
+    this.unit = Math.min(220, Math.max(10, this.unit * f));
+    this.render();
+  }
+
   resize() {
     const parent = this.canvas.parentElement;
     const dpr = window.devicePixelRatio || 1;
@@ -134,7 +147,7 @@ export class Plane {
     const scene = this.scene;
     const { m: M, stage } = scene ? this.currentMatrix() : { m: I2, stage: 0 };
     const apply = ([x, y]) => [M[0][0] * x + M[0][1] * y, M[1][0] * x + M[1][1] * y];
-    const N = 20;
+    const N = Math.min(80, Math.ceil(Math.max(w, h) / (2 * u)) + 6);
 
     ctx.lineWidth = 1;
     for (let k = -N; k <= N; k++) {

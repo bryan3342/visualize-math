@@ -132,13 +132,13 @@ export function rrefSteps(input) {
     if (pivot === -1) continue;
     if (pivot !== pivotRow) {
       [m[pivot], m[pivotRow]] = [m[pivotRow], m[pivot]];
-      steps.push({ type: 'swap', rows: [pivotRow, pivot], desc: `R${pivotRow + 1} ↔ R${pivot + 1}`, after: clone(m) });
+      steps.push({ type: 'swap', rows: [pivotRow, pivot], pivotAt: [pivotRow, col], desc: `R${pivotRow + 1} ↔ R${pivot + 1}`, after: clone(m) });
     }
     const p = m[pivotRow][col];
     if (Math.abs(p - 1) > EPS) {
       for (let j = 0; j < cols; j++) m[pivotRow][j] /= p;
       tidyRow(m[pivotRow]);
-      steps.push({ type: 'scale', rows: [pivotRow], desc: `R${pivotRow + 1} ← ${fmt(1 / p)}·R${pivotRow + 1}`, after: clone(m) });
+      steps.push({ type: 'scale', rows: [pivotRow], pivotAt: [pivotRow, col], desc: `R${pivotRow + 1} ← ${fmt(1 / p)}·R${pivotRow + 1}`, after: clone(m) });
     }
     for (let r = 0; r < rows; r++) {
       if (r === pivotRow) continue;
@@ -147,7 +147,7 @@ export function rrefSteps(input) {
       for (let j = 0; j < cols; j++) m[r][j] -= f * m[pivotRow][j];
       tidyRow(m[r]);
       const sign = f > 0 ? '−' : '+';
-      steps.push({ type: 'add', rows: [r, pivotRow], desc: `R${r + 1} ← R${r + 1} ${sign} ${fmt(Math.abs(f))}·R${pivotRow + 1}`, after: clone(m) });
+      steps.push({ type: 'add', rows: [r, pivotRow], target: r, source: pivotRow, pivotAt: [pivotRow, col], desc: `R${r + 1} ← R${r + 1} ${sign} ${fmt(Math.abs(f))}·R${pivotRow + 1}`, after: clone(m) });
     }
     pivotRow++;
   }

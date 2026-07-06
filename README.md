@@ -9,18 +9,29 @@ the arithmetic.
 
 ## What it does
 
-- **Matrix multiplication** — `A*B` animates two ways: the plane view plays the composition
-  stage by stage (right to left, the way composition actually works), and the steps view fills
-  in the product cell by cell as row·column dot products.
+Two toggleable representations of every expression:
+
+- **Graph view** — the geometric picture: an animated, zoomable (scroll wheel or +/− buttons)
+  2D grid transformation with basis vectors, eigenlines, and determinant area shading.
+- **Matrix view** — the actual matrices: color-coded, step-by-step arithmetic with a
+  clickable start-to-finish timeline of every step, a legend, and an explicit explanation
+  per step.
+
+Operations:
+
+- **Matrix multiplication** — `A*B` plays the composition stage by stage on the graph
+  (right to left, the way composition actually works) and fills the product in cell by cell
+  as color-coded row·column dot products in the matrix view.
 - **Matrix–vector products** — `A*v` shows the vector riding the grid transformation.
-- **Eigenvectors & eigenvalues** — `eig(A)` draws the invariant eigenlines, animates the
-  transform, and shows the eigenvectors staying on their span while scaling by λ. Complex,
-  repeated, and defective cases are reported honestly.
-- **Elementary row operations** — `rref(M)` plays the full reduction one elementary row
-  operation at a time (`R2 ← R2 − 2·R1`, swaps, scalings), with the affected rows highlighted.
-- **Determinants** — `det(A)` shades the image of the unit square and shows the area scaling.
-- **General expressions** — `2A + B`, `inv(A)*A`, `B^4`, `trans(A)`, scalar arithmetic,
-  parentheses, and implicit multiplication (`2A`).
+- **Eigenvectors & eigenvalues** — `eig(A)` draws the invariant eigenlines and shows
+  eigenvectors staying on their span while scaling by λ; the matrix view verifies
+  `A·v = λ·v` numerically. Complex, repeated, and defective cases are reported honestly.
+- **Elementary row operations** — `rref(M)` plays the reduction one elementary row operation
+  at a time (`R2 ← R2 − 2·R1`, swaps, scalings) with pivot rows and pivot entries highlighted.
+- **Determinants** — `det(A)` walks the `a·d − b·c` formula with diagonal highlights and
+  shades the unit square's image on the graph.
+- **More** — entry-by-entry addition/subtraction, scalar multiplication, transposition, and
+  general expressions: `2A + B`, `inv(A)*A`, `B^4`, parentheses, implicit multiplication (`2A`).
 
 ## Syntax
 
