@@ -1,0 +1,9 @@
+{
+  "name": "visualize-math",
+  "private": true,
+  "type": "module",
+  "description": "Interactive linear algebra visualizer — animated matrix transformations, eigenvectors, and row operations in the browser.",
+  "scripts": {
+    "test": "bun test"
+  }
+}

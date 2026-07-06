@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>visualize-math — linear algebra, animated</title>
+  <meta name="description" content="Interactive linear algebra visualizer: matrices, vectors, transformations, eigenvectors, and elementary row operations, animated in the browser.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0e14'/%3E%3Ctext x='16' y='23' font-size='15' text-anchor='middle' fill='%2360a5fa' font-family='monospace'%3E%5Bλ%5D%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>visualize‑math</h1>
+    <p>Set up matrices and vectors, write an expression, watch the linear algebra happen.</p>
+    <a class="gh" href="https://github.com/bryan3342/visualize-math">GitHub</a>
+  </header>
+  <main>
+    <aside class="panel">
+      <section>
+        <h2>Objects</h2>
+        <div id="objects"></div>
+      </section>
+      <section>
+        <h2>Expression</h2>
+        <div class="expr-row">
+          <input id="expr" spellcheck="false" autocomplete="off" placeholder="e.g. A*B, eig(A), rref(M)">
+          <button id="run">Go</button>
+        </div>
+        <div class="chips">
+          <button class="chip">A*B</button>
+          <button class="chip">A*v</button>
+          <button class="chip">eig(A)</button>
+          <button class="chip">eig(B)</button>
+          <button class="chip">rref(M)</button>
+          <button class="chip">det(A)</button>
+          <button class="chip">inv(A)*A</button>
+          <button class="chip">B^4</button>
+        </div>
+        <div id="status"></div>
+        <div id="result"></div>
+      </section>
+      <section class="help">
+        <h2>Syntax</h2>
+        <p><code>*</code> <code>+</code> <code>-</code> <code>/</code> <code>^</code> with scalars and named objects, plus
+          <code>det(A)</code>, <code>inv(A)</code>, <code>trans(A)</code>, <code>rref(M)</code>, <code>eig(A)</code>.
+          Implicit multiplication works too: <code>2A</code>, <code>A(B+B)</code>.</p>
+        <p class="muted">The Plane view animates 2×2 matrices and 2‑vectors — products like <code>A*B*v</code> play stage by stage,
+          right to left. Products and <code>rref</code> also get numeric step‑by‑step animations in the Steps view.</p>
+      </section>
+    </aside>
+    <section class="stage">
+      <div class="tabs">
+        <button class="tab active" data-tab="plane">Plane</button>
+        <button class="tab" data-tab="steps">Steps</button>
+      </div>
+      <div id="plane-wrap">
+        <div class="canvas-holder">
+          <canvas id="plane"></canvas>
+          <div id="plane-message" hidden></div>
+        </div>
+        <div class="plane-controls">
+          <button id="plane-play" title="Play / pause">▶</button>
+          <button id="plane-restart" title="Restart">↺</button>
+          <input id="plane-scrub" type="range" min="0" max="1000" value="1000">
+          <select id="plane-speed" title="Speed">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+          </select>
+          <span id="plane-stage"></span>
+        </div>
+      </div>
+      <div id="steps-wrap" hidden>
+        <div id="steps"></div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
