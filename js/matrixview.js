@@ -398,7 +398,7 @@ function tableHtml(m, cellClass = () => '', cellText = null) {
   return `<table class="mat">${rows}</table>`;
 }
 
-function equationHtml(parts) {
+export function equationHtml(parts) {
   const bits = parts.map((p) => {
     if (p.op !== undefined) return `<span class="mat-op">${p.op}</span>`;
     if (p.scalar !== undefined) {

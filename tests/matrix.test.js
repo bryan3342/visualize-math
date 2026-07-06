@@ -95,6 +95,25 @@ test('parser rejects invalid input', () => {
   expect(() => parse('A $ B')).toThrow(/Unexpected character/);
 });
 
+test('matrix literals parse with correct orientation', () => {
+  expect(evaluate(parse('[1 2]'), env).m).toEqual([[1, 2]]);
+  expect(evaluate(parse('[1; 2]'), env).m).toEqual([[1], [2]]);
+  expect(evaluate(parse('[1 2; 3 4] * [5; 6]'), env).m).toEqual([[17], [39]]);
+  expect(evaluate(parse('[1, -2]'), env).m).toEqual([[1, -2]]);
+  expect(evaluate(parse('[1 -2]'), env).m).toEqual([[1, -2]]);
+  expect(evaluate(parse('2[1 0]'), env).m).toEqual([[2, 0]]);
+  expect(evaluate(parse('[1 2] + [3 4]'), env).m).toEqual([[4, 6]]);
+  expect(evaluate(parse('[2^2 1]'), env).m).toEqual([[4, 1]]);
+});
+
+test('matrix literals reject invalid input', () => {
+  expect(() => parse('[1 2; 3]')).toThrow(/same length/);
+  expect(() => parse('[1 2')).toThrow(/Missing/);
+  expect(() => parse('[]')).toThrow(/empty row/);
+  expect(() => evaluate(parse('[A]'), env)).toThrow(/numbers/);
+  expect(() => evaluate(parse('[1 0] * [1 0]'), env)).toThrow(/Cannot multiply/);
+});
+
 test('flattenProduct detects pure product chains', () => {
   expect(flattenProduct(parse('A*B*v')).length).toBe(3);
   expect(flattenProduct(parse('A+B'))).toBeNull();

@@ -9,13 +9,16 @@ the arithmetic.
 
 ## What it does
 
-Two toggleable representations of every expression:
+Three toggleable representations:
 
 - **Graph view** — the geometric picture: an animated, zoomable (scroll wheel or +/− buttons)
   2D grid transformation with basis vectors, eigenlines, and determinant area shading.
 - **Matrix view** — the actual matrices: color-coded, step-by-step arithmetic with a
   clickable start-to-finish timeline of every step, a legend, and an explicit explanation
   per step.
+- **Sandbox** — a whiteboard-white workspace for students: type matrices inline
+  (`[1 2; 3 4] * [5; 6]`), see the equation rendered live exactly as typed (rows stay rows,
+  columns stay columns), then press Go for the same color-coded step-by-step walkthrough.
 
 Operations:
 
@@ -44,6 +47,7 @@ Operations:
 | `trans(A)` | transpose |
 | `rref(M)` | reduced row-echelon form, animated as row operations |
 | `eig(A)` | eigenvalues/eigenvectors of a 2×2, drawn on the plane |
+| `[1 2; 3 4]` | inline matrix literal — spaces/commas between entries, `;` between rows |
 
 The plane view animates 2×2 matrices and 2-vectors; anything bigger still computes and
 animates numerically in the steps view.

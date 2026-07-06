@@ -16,7 +16,7 @@ export function parse(src) {
     return tok;
   };
 
-  const startsFactor = (tok) => tok && (tok.t === 'num' || tok.t === 'name' || tok.t === '(');
+  const startsFactor = (tok) => tok && (tok.t === 'num' || tok.t === 'name' || tok.t === '(' || tok.t === '[');
 
   function parseExpr() {
     let node = parseTerm();
@@ -71,6 +71,22 @@ export function parse(src) {
       expect(')');
       return node;
     }
+    if (tok.t === '[') {
+      // MATLAB-style literal: spaces/commas between entries, ';' between rows.
+      const rows = [[]];
+      for (;;) {
+        const p = peek();
+        if (!p) throw new Error("Missing ']' to close the matrix");
+        if (p.t === ']') { next(); break; }
+        if (p.t === ';') { next(); rows.push([]); continue; }
+        if (p.t === ',') { next(); continue; }
+        rows[rows.length - 1].push(parseUnary());
+      }
+      if (rows.length > 1 && rows[rows.length - 1].length === 0) rows.pop();
+      if (rows.some((r) => r.length === 0)) throw new Error('Matrix literal has an empty row');
+      if (rows.some((r) => r.length !== rows[0].length)) throw new Error('Matrix literal rows must all have the same length');
+      return { t: 'lit', rows };
+    }
     throw new Error(`Unexpected '${tok.v ?? tok.t}'`);
   }
 
@@ -105,7 +121,7 @@ function tokenize(src) {
       i = j;
       continue;
     }
-    if ('+-*/^(),'.includes(ch)) {
+    if ('+-*/^()[];,'.includes(ch)) {
       toks.push({ t: ch });
       i++;
       continue;
@@ -127,6 +143,14 @@ export function evaluate(ast, env) {
     case 'neg': {
       const val = evaluate(ast.e, env);
       return val.k === 'num' ? { k: 'num', v: -val.v } : { k: 'mat', m: scale(val.m, -1) };
+    }
+    case 'lit': {
+      const m = ast.rows.map((row) => row.map((el) => {
+        const v = evaluate(el, env);
+        if (v.k !== 'num') throw new Error('Matrix literal entries must be numbers');
+        return v.v;
+      }));
+      return { k: 'mat', m };
     }
     case 'bin':
       return evalBin(ast, env);

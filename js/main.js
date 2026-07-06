@@ -1,7 +1,7 @@
 import { parse, evaluate, flattenProduct, factorLabel } from './parser.js';
 import { dims, fmt, rrefSteps, eigen2x2, identity, multiply } from './matrix.js';
 import { Plane } from './plane.js';
-import { MatrixView } from './matrixview.js';
+import { MatrixView, equationHtml } from './matrixview.js';
 import { ObjectsPanel } from './ui.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -26,6 +26,7 @@ const plane = new Plane(
   $('#plane-message'),
 );
 const matrixView = new MatrixView($('#matrixview'));
+const sandboxView = new MatrixView($('#wb-view'));
 
 const exprInput = $('#expr');
 const statusEl = $('#status');
@@ -45,83 +46,183 @@ function selectTab(name) {
   tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
   $('#graph-wrap').hidden = name !== 'graph';
   $('#matrix-wrap').hidden = name !== 'matrix';
+  $('#sandbox-wrap').hidden = name !== 'sandbox';
   if (name === 'graph') plane.resize();
 }
 tabs.forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab)));
 
+/* ---------- sandbox (whiteboard) ---------- */
+
+const wbExpr = $('#wb-expr');
+const wbStatus = $('#wb-status');
+const wbPreview = $('#wb-preview');
+
+wbExpr.addEventListener('input', updatePreview);
+wbExpr.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSandbox(); });
+$('#wb-go').addEventListener('click', runSandbox);
+
+function updatePreview() {
+  wbPreview.hidden = false;
+  wbStatus.textContent = '';
+  try {
+    wbPreview.innerHTML = equationHtml(previewParts(parse(wbExpr.value.trim()), objects.env()));
+  } catch {
+    wbPreview.innerHTML = '';
+  }
+}
+
+function runSandbox() {
+  const src = wbExpr.value.trim();
+  if (!src) return;
+  wbStatus.textContent = '';
+  try {
+    renderSymbolic(sandboxView, src, objects.env());
+    wbPreview.hidden = true; // the animation's Start frame shows the equation
+  } catch (err) {
+    wbStatus.textContent = err.message;
+  }
+}
+
+// Render each top-level operand the way it was typed, without computing the result.
+function previewParts(ast, env) {
+  switch (ast.t) {
+    case 'num': return [{ scalar: ast.v }];
+    case 'lit':
+    case 'name': {
+      const v = evaluate(ast, env);
+      return [{ m: v.m, name: ast.t === 'name' ? ast.id : '' }];
+    }
+    case 'neg': return [{ op: '−' }, ...previewParts(ast.e, env)];
+    case 'bin': {
+      if (ast.op === '^') return [...previewParts(ast.l, env), { op: `^${expText(ast.r)}` }];
+      const sym = { '*': '×', '/': '÷', '+': '+', '-': '−' }[ast.op];
+      return [...previewParts(ast.l, env), { op: sym }, ...previewParts(ast.r, env)];
+    }
+    case 'call': return [{ op: `${ast.fn}(` }, ...previewParts(ast.args[0], env), { op: ')' }];
+    default: return [{ op: '…' }];
+  }
+}
+
+function expText(node) {
+  if (node.t === 'num') return fmt(node.v);
+  if (node.t === 'neg' && node.e.t === 'num') return `-${fmt(node.e.v)}`;
+  return '…';
+}
+
+/* ---------- expression running ---------- */
+
 function run() {
   const src = exprInput.value.trim();
-  if (src) runExpression(src);
+  if (src) runExpression(src, { autoTab: true });
 }
 
 function rerun() {
-  if (lastRun) runExpression(lastRun, { silent: true });
+  if (lastRun) runExpression(lastRun, { silent: true, autoTab: false });
 }
 
-function runExpression(src, { silent = false } = {}) {
+function runExpression(src, { silent = false, autoTab = true } = {}) {
   statusEl.textContent = '';
   try {
     lastRun = src;
-    dispatch(src);
+    dispatch(src, autoTab);
   } catch (err) {
     if (!silent) statusEl.textContent = err.message;
   }
 }
 
-function dispatch(src) {
-  const ast = parse(src);
+function dispatch(src, autoTab) {
   const env = objects.env();
+  const info = renderSymbolic(matrixView, src, env);
+
+  let planeShown = false;
+  if (info.kind === 'eig') {
+    if (info.e.complex) {
+      plane.setScene({ stages: [{ m: info.m, label: `apply ${info.argLabel} — no real eigenvectors` }] });
+    } else {
+      plane.setScene({
+        stages: [{ m: info.m, label: `apply ${info.argLabel} — eigenvectors stay on their span` }],
+        eigen: {
+          lines: info.e.vectors,
+          arrows: info.e.vectors.map((v, i) => ({ v, value: info.e.values[i] })),
+        },
+      });
+    }
+    planeShown = true;
+  } else if (info.kind === 'expr') {
+    const { ast, value, factors } = info;
+    if (value.k === 'mat') {
+      const [r, c] = dims(value.m);
+      if (r === 2 && c === 2) {
+        plane.setScene({ stages: buildStages(factors) ?? [{ m: value.m, label: src }] });
+        planeShown = true;
+      } else if (r === 2 && c === 1) {
+        plane.setScene(buildVectorScene(factors, value.m, src));
+        planeShown = true;
+      }
+    } else if (ast.t === 'call' && ast.fn === 'det') {
+      const arg = evaluate(ast.args[0], env);
+      if (arg.k === 'mat' && arg.m.length === 2 && arg.m[0].length === 2) {
+        plane.setScene({
+          stages: [{ m: arg.m, label: `unit square area scales by |det| = ${fmt(Math.abs(value.v))}` }],
+          showSquare: true,
+        });
+        planeShown = true;
+      }
+    }
+  }
+
+  if (!planeShown) {
+    plane.clear(info.kind === 'rref'
+      ? 'Row reduction is a numeric process — it plays step by step in the Matrix tab.'
+      : 'The graph view shows 2×2 matrices and 2-vectors — toggle to the Matrix tab for this result.');
+  }
+  if (autoTab) selectTab(planeShown ? 'graph' : 'matrix');
+}
+
+// Route an expression into a MatrixView (dark tab or whiteboard sandbox alike);
+// returns what the graph view needs to build its scene.
+function renderSymbolic(view, src, env) {
+  const ast = parse(src);
 
   if (ast.t === 'call' && ast.fn === 'eig') {
-    vizEigen(evaluate(ast.args[0], env), factorLabel(ast.args[0]) ?? 'the matrix');
-    return;
+    const value = evaluate(ast.args[0], env);
+    if (value.k !== 'mat') throw new Error('eig(…) expects a matrix');
+    const [r, c] = dims(value.m);
+    if (r !== c) throw new Error(`eig needs a square matrix (got ${r}×${c})`);
+    if (r !== 2) throw new Error('The eigen visualization currently supports 2×2 matrices');
+    const argLabel = factorLabel(ast.args[0]) ?? 'the matrix';
+    const e = eigen2x2(value.m);
+    view.showEigen(value.m, e, argLabel);
+    return { kind: 'eig', m: value.m, e, argLabel };
   }
+
   if (ast.t === 'call' && ast.fn === 'rref') {
-    vizRref(evaluate(ast.args[0], env), factorLabel(ast.args[0]) ?? 'M');
-    return;
+    const value = evaluate(ast.args[0], env);
+    if (value.k !== 'mat') throw new Error('rref(…) expects a matrix');
+    const argLabel = factorLabel(ast.args[0]) ?? 'M';
+    const { steps: ops } = rrefSteps(value.m);
+    view.showRowOps(value.m, ops, esc(argLabel));
+    return { kind: 'rref' };
   }
 
   const value = evaluate(ast, env);
   const factors = readFactors(ast, env);
-  buildMatrixView(ast, env, value, factors, esc(src));
-
-  let planeShown = false;
-  if (value.k === 'mat') {
-    const [r, c] = dims(value.m);
-    if (r === 2 && c === 2) {
-      plane.setScene({ stages: buildStages(factors) ?? [{ m: value.m, label: src }] });
-      planeShown = true;
-    } else if (r === 2 && c === 1) {
-      plane.setScene(buildVectorScene(factors, value.m, src));
-      planeShown = true;
-    }
-  } else if (ast.t === 'call' && ast.fn === 'det') {
-    const arg = evaluate(ast.args[0], env);
-    if (arg.k === 'mat' && arg.m.length === 2 && arg.m[0].length === 2) {
-      plane.setScene({
-        stages: [{ m: arg.m, label: `unit square area scales by |det| = ${fmt(Math.abs(value.v))}` }],
-        showSquare: true,
-      });
-      planeShown = true;
-    }
-  }
-
-  if (!planeShown) plane.clear('The graph view shows 2×2 matrices and 2-vectors — toggle to the Matrix tab for this result.');
-  selectTab(planeShown ? 'graph' : 'matrix');
+  buildSymbolicView(view, ast, env, value, factors, esc(src));
+  return { kind: 'expr', ast, value, factors };
 }
 
 // Pick the richest symbolic breakdown the top-level form supports.
-function buildMatrixView(ast, env, value, factors, srcT) {
+function buildSymbolicView(view, ast, env, value, factors, srcT) {
   if (factors && factors.length === 2 && value.k === 'mat') {
     const [f1, f2] = factors;
     if (f1.value.k === 'mat' && f2.value.k === 'mat' && dims(f1.value.m)[1] === dims(f2.value.m)[0]) {
-      matrixView.showMatmul(f1.value.m, f2.value.m, value.m, f1.label, f2.label);
+      view.showMatmul(f1.value.m, f2.value.m, value.m, f1.label, f2.label);
       return;
     }
     const num = f1.value.k === 'num' ? f1 : f2.value.k === 'num' ? f2 : null;
     const mat = num === f1 ? f2 : f1;
     if (num && mat.value.k === 'mat') {
-      matrixView.showScalar(num.value.v, mat.value.m, value.m, mat.label);
+      view.showScalar(num.value.v, mat.value.m, value.m, mat.label);
       return;
     }
   }
@@ -129,7 +230,7 @@ function buildMatrixView(ast, env, value, factors, srcT) {
     const L = evaluate(ast.l, env);
     const R = evaluate(ast.r, env);
     if (L.k === 'mat' && R.k === 'mat') {
-      matrixView.showElementwise(
+      view.showElementwise(
         L.m, R.m, value.m,
         ast.op === '+' ? '+' : '−',
         factorLabel(ast.l) ?? 'left', factorLabel(ast.r) ?? 'right',
@@ -140,14 +241,14 @@ function buildMatrixView(ast, env, value, factors, srcT) {
   if (ast.t === 'call' && ast.fn === 'trans') {
     const arg = evaluate(ast.args[0], env);
     if (arg.k === 'mat') {
-      matrixView.showTranspose(arg.m, value.m, factorLabel(ast.args[0]) ?? 'A');
+      view.showTranspose(arg.m, value.m, factorLabel(ast.args[0]) ?? 'A');
       return;
     }
   }
   if (ast.t === 'call' && ast.fn === 'det') {
     const arg = evaluate(ast.args[0], env);
     if (arg.k === 'mat' && arg.m.length === 2 && arg.m[0].length === 2) {
-      matrixView.showDet2(arg.m, factorLabel(ast.args[0]) ?? 'A', value.v);
+      view.showDet2(arg.m, factorLabel(ast.args[0]) ?? 'A', value.v);
       return;
     }
   }
@@ -158,10 +259,10 @@ function buildMatrixView(ast, env, value, factors, srcT) {
       parts.push(f.value.k === 'num' ? { scalar: f.value.v } : { m: f.value.m, name: f.label });
     });
     parts.push({ op: '=' }, { m: value.m, name: 'result' });
-    matrixView.showEquation(parts, `<code>${srcT}</code> composes right to left — watch it stage by stage in the Graph tab.`);
+    view.showEquation(parts, `<code>${srcT}</code> composes right to left — watch it stage by stage in the Graph tab.`);
     return;
   }
-  matrixView.showEquation(
+  view.showEquation(
     value.k === 'num' ? [{ scalar: value.v, name: `${srcT} =` }] : [{ m: value.m, name: `${srcT} =` }],
   );
 }
@@ -214,35 +315,6 @@ function buildVectorScene(factors, resultVec, src) {
   };
 }
 
-function vizEigen(value, argLabel) {
-  if (value.k !== 'mat') throw new Error('eig(…) expects a matrix');
-  const [r, c] = dims(value.m);
-  if (r !== c) throw new Error(`eig needs a square matrix (got ${r}×${c})`);
-  if (r !== 2) throw new Error('The eigen visualization currently supports 2×2 matrices');
-  const e = eigen2x2(value.m);
-  matrixView.showEigen(value.m, e, argLabel);
-  if (e.complex) {
-    plane.setScene({ stages: [{ m: value.m, label: `apply ${argLabel} — no real eigenvectors` }] });
-  } else {
-    plane.setScene({
-      stages: [{ m: value.m, label: `apply ${argLabel} — eigenvectors stay on their span` }],
-      eigen: {
-        lines: e.vectors,
-        arrows: e.vectors.map((v, i) => ({ v, value: e.values[i] })),
-      },
-    });
-  }
-  selectTab('graph');
-}
-
-function vizRref(value, argLabel) {
-  if (value.k !== 'mat') throw new Error('rref(…) expects a matrix');
-  const { steps: ops } = rrefSteps(value.m);
-  matrixView.showRowOps(value.m, ops, esc(argLabel));
-  plane.clear('Row reduction is a numeric process — it plays step by step in the Matrix tab.');
-  selectTab('matrix');
-}
-
 function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -250,3 +322,5 @@ function esc(s) {
 objects.seed();
 exprInput.value = 'A*B';
 run();
+wbExpr.value = '[1 2; 3 4] * [5; 6]';
+updatePreview();

@@ -47,6 +47,8 @@
           (<code>B^4</code>, <code>A^-1</code>, <code>2A + B</code>), plus <code>det()</code>, <code>inv()</code>,
           <code>trans()</code>, <code>rref()</code>, <code>eig()</code>. Implicit multiplication works:
           <code>2A</code>, <code>A(B+B)</code>.</p>
+        <p>Inline matrices work anywhere: <code>[1 2; 3 4] * [5; 6]</code> — rows separated by <code>;</code>.
+          The Sandbox tab is built around them.</p>
         <p>Graph view animates 2×2 matrices and 2‑vectors (products play right to left). Matrix view works for
           any size and shows the arithmetic with color-coded steps.</p>
       </details>
@@ -55,6 +57,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="graph">Graph</button>
         <button class="tab" data-tab="matrix">Matrix</button>
+        <button class="tab" data-tab="sandbox">Sandbox</button>
       </div>
       <div id="graph-wrap">
         <div class="canvas-holder">
@@ -80,6 +83,18 @@
       </div>
       <div id="matrix-wrap" hidden>
         <div id="matrixview"></div>
+      </div>
+      <div id="sandbox-wrap" hidden>
+        <div class="wb-input">
+          <input id="wb-expr" spellcheck="false" autocomplete="off" placeholder="[1 2; 3 4] * [5; 6]">
+          <button id="wb-go">Go</button>
+        </div>
+        <div class="wb-hint">Type matrices directly — spaces or commas between entries, <code>;</code> between rows:
+          <code>[1 2]</code> is a row, <code>[1; 2]</code> a column, <code>[1 2; 3 4]</code> a 2×2.
+          Named objects (<code>A</code>, <code>v</code>, …) and functions (<code>rref</code>, <code>eig</code>, …) work here too.</div>
+        <div id="wb-status"></div>
+        <div id="wb-preview"></div>
+        <div id="wb-view"></div>
       </div>
     </section>
   </main>
