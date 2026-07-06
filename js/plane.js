@@ -3,7 +3,7 @@
 import { fmt } from './matrix.js';
 
 const I2 = [[1, 0], [0, 1]];
-const LEG_MS = 1800;
+const LEG_MS = 3000;
 const BASE_UNIT = 56;
 
 const C = {
@@ -21,7 +21,7 @@ const C = {
   subtext: '#94a3b8',
 };
 
-const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const lerp = (a, b, t) => a + (b - a) * t;
 const lerpMat = (a, b, t) => [
   [lerp(a[0][0], b[0][0], t), lerp(a[0][1], b[0][1], t)],

@@ -27,6 +27,7 @@ const plane = new Plane(
 );
 const matrixView = new MatrixView($('#matrixview'));
 const sandboxView = new MatrixView($('#wb-view'));
+const symbolicViews = [matrixView, sandboxView];
 
 const exprInput = $('#expr');
 const statusEl = $('#status');
@@ -34,6 +35,7 @@ let lastRun = '';
 
 $('#run').addEventListener('click', run);
 exprInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+exprInput.addEventListener('input', updatePreview);
 document.querySelectorAll('.op-item').forEach((item) =>
   item.addEventListener('click', () => {
     exprInput.value = item.dataset.expr;
@@ -42,7 +44,9 @@ document.querySelectorAll('.op-item').forEach((item) =>
 );
 
 const tabs = document.querySelectorAll('.tab');
+let currentTab = 'graph';
 function selectTab(name) {
+  currentTab = name;
   tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
   $('#graph-wrap').hidden = name !== 'graph';
   $('#matrix-wrap').hidden = name !== 'matrix';
@@ -51,35 +55,16 @@ function selectTab(name) {
 }
 tabs.forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab)));
 
-/* ---------- sandbox (whiteboard) ---------- */
+/* ---------- sandbox live preview (fed by the main Expression box) ---------- */
 
-const wbExpr = $('#wb-expr');
-const wbStatus = $('#wb-status');
 const wbPreview = $('#wb-preview');
-
-wbExpr.addEventListener('input', updatePreview);
-wbExpr.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSandbox(); });
-$('#wb-go').addEventListener('click', runSandbox);
 
 function updatePreview() {
   wbPreview.hidden = false;
-  wbStatus.textContent = '';
   try {
-    wbPreview.innerHTML = equationHtml(previewParts(parse(wbExpr.value.trim()), objects.env()));
+    wbPreview.innerHTML = equationHtml(previewParts(parse(exprInput.value.trim()), objects.env()));
   } catch {
     wbPreview.innerHTML = '';
-  }
-}
-
-function runSandbox() {
-  const src = wbExpr.value.trim();
-  if (!src) return;
-  wbStatus.textContent = '';
-  try {
-    renderSymbolic(sandboxView, src, objects.env());
-    wbPreview.hidden = true; // the animation's Start frame shows the equation
-  } catch (err) {
-    wbStatus.textContent = err.message;
   }
 }
 
@@ -125,6 +110,7 @@ function runExpression(src, { silent = false, autoTab = true } = {}) {
   try {
     lastRun = src;
     dispatch(src, autoTab);
+    wbPreview.hidden = true; // the sandbox's Start frame now shows the equation
   } catch (err) {
     if (!silent) statusEl.textContent = err.message;
   }
@@ -132,7 +118,7 @@ function runExpression(src, { silent = false, autoTab = true } = {}) {
 
 function dispatch(src, autoTab) {
   const env = objects.env();
-  const info = renderSymbolic(matrixView, src, env);
+  const info = renderSymbolic(symbolicViews, src, env);
 
   let planeShown = false;
   if (info.kind === 'eig') {
@@ -176,12 +162,12 @@ function dispatch(src, autoTab) {
       ? 'Row reduction is a numeric process — it plays step by step in the Matrix tab.'
       : 'The graph view shows 2×2 matrices and 2-vectors — toggle to the Matrix tab for this result.');
   }
-  if (autoTab) selectTab(planeShown ? 'graph' : 'matrix');
+  if (autoTab && currentTab !== 'sandbox') selectTab(planeShown ? 'graph' : 'matrix');
 }
 
-// Route an expression into a MatrixView (dark tab or whiteboard sandbox alike);
+// Route an expression into every MatrixView (dark tab and whiteboard sandbox);
 // returns what the graph view needs to build its scene.
-function renderSymbolic(view, src, env) {
+function renderSymbolic(views, src, env) {
   const ast = parse(src);
 
   if (ast.t === 'call' && ast.fn === 'eig') {
@@ -192,7 +178,7 @@ function renderSymbolic(view, src, env) {
     if (r !== 2) throw new Error('The eigen visualization currently supports 2×2 matrices');
     const argLabel = factorLabel(ast.args[0]) ?? 'the matrix';
     const e = eigen2x2(value.m);
-    view.showEigen(value.m, e, argLabel);
+    views.forEach((view) => view.showEigen(value.m, e, argLabel));
     return { kind: 'eig', m: value.m, e, argLabel };
   }
 
@@ -201,13 +187,13 @@ function renderSymbolic(view, src, env) {
     if (value.k !== 'mat') throw new Error('rref(…) expects a matrix');
     const argLabel = factorLabel(ast.args[0]) ?? 'M';
     const { steps: ops } = rrefSteps(value.m);
-    view.showRowOps(value.m, ops, esc(argLabel));
+    views.forEach((view) => view.showRowOps(value.m, ops, esc(argLabel)));
     return { kind: 'rref' };
   }
 
   const value = evaluate(ast, env);
   const factors = readFactors(ast, env);
-  buildSymbolicView(view, ast, env, value, factors, esc(src));
+  views.forEach((view) => buildSymbolicView(view, ast, env, value, factors, esc(src)));
   return { kind: 'expr', ast, value, factors };
 }
 
@@ -322,5 +308,3 @@ function esc(s) {
 objects.seed();
 exprInput.value = 'A*B';
 run();
-wbExpr.value = '[1 2; 3 4] * [5; 6]';
-updatePreview();

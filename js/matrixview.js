@@ -3,7 +3,7 @@
 
 import { dims, fmt, multiply } from './matrix.js';
 
-const STEP_MS = 1600;
+const STEP_MS = 2800;
 const SUB = ['₀', '₁', '₂', '₃'];
 
 export class MatrixView {
@@ -88,12 +88,22 @@ export class MatrixView {
     if (manual) this.pause();
     this.index = Math.max(0, Math.min(this.frames.length - 1, i));
     const frame = this.frames[this.index];
-    this.stage.innerHTML = frame.html;
+    this.applyFrame(frame.html);
     this.caption.innerHTML = frame.caption ?? '';
+    this.caption.animate([{ opacity: 0.15 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
     this.counter.textContent = `${this.index + 1} / ${this.frames.length}`;
     this.listEl.querySelectorAll('li').forEach((li, j) => li.classList.toggle('active', j === this.index));
     const active = this.listEl.querySelector('li.active');
-    if (active) active.scrollIntoView({ block: 'nearest' });
+    if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  // Morph the existing tables in place when the frame shares the current structure,
+  // so highlight colors glide via CSS transitions instead of the DOM being replaced.
+  applyFrame(html) {
+    const next = document.createElement('div');
+    next.innerHTML = html;
+    if (sameShape(this.stage, next)) morphInto(this.stage, next);
+    else this.stage.innerHTML = html;
   }
 
   play() {
@@ -407,6 +417,42 @@ export function equationHtml(parts) {
     return `<div class="mat-block">${p.name ? `<div class="mat-name">${p.name}</div>` : ''}${tableHtml(p.m, p.cellClass, p.cellText)}</div>`;
   });
   return `<div class="matmul">${bits.join('')}</div>`;
+}
+
+function sameShape(cur, next) {
+  const shape = (root) => ({
+    tables: [...root.querySelectorAll('table.mat')].map((t) => t.querySelectorAll('td').length),
+    ops: root.querySelectorAll('.mat-op').length,
+    names: root.querySelectorAll('.mat-name').length,
+    scalars: root.querySelectorAll('.mv-scalar').length,
+  });
+  const a = shape(cur);
+  const b = shape(next);
+  return a.tables.length > 0
+    && a.tables.length === b.tables.length
+    && a.tables.every((n, i) => n === b.tables[i])
+    && a.ops === b.ops && a.names === b.names && a.scalars === b.scalars;
+}
+
+function morphInto(cur, next) {
+  const zip = (sel, fn) => {
+    const a = cur.querySelectorAll(sel);
+    const b = next.querySelectorAll(sel);
+    a.forEach((el, i) => fn(el, b[i]));
+  };
+  zip('td', (el, to) => {
+    if (el.className !== to.className) el.className = to.className;
+    if (el.textContent !== to.textContent) {
+      el.textContent = to.textContent;
+      el.animate([{ opacity: 0.1 }, { opacity: 1 }], { duration: 500, easing: 'ease-out' });
+    }
+  });
+  zip('.mat-name', (el, to) => { if (el.textContent !== to.textContent) el.textContent = to.textContent; });
+  zip('.mat-op', (el, to) => { if (el.textContent !== to.textContent) el.textContent = to.textContent; });
+  zip('.mv-scalar', (el, to) => {
+    if (el.className !== to.className) el.className = to.className;
+    if (el.textContent !== to.textContent) el.textContent = to.textContent;
+  });
 }
 
 function explainRowOp(s) {

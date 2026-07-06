@@ -16,9 +16,10 @@ Three toggleable representations:
 - **Matrix view** — the actual matrices: color-coded, step-by-step arithmetic with a
   clickable start-to-finish timeline of every step, a legend, and an explicit explanation
   per step.
-- **Sandbox** — a whiteboard-white workspace for students: type matrices inline
-  (`[1 2; 3 4] * [5; 6]`), see the equation rendered live exactly as typed (rows stay rows,
-  columns stay columns), then press Go for the same color-coded step-by-step walkthrough.
+- **Sandbox** — a whiteboard-white rendering of the same walkthrough, for teaching: driven by
+  the same expression box and objects as the other views. Type matrices inline
+  (`[1 2; 3 4] * [5; 6]`) and the equation previews live exactly as typed — rows stay rows,
+  columns stay columns — then Go steps through it in color.
 
 Operations:
 

@@ -19,7 +19,7 @@
       <section>
         <h2>Expression</h2>
         <div class="expr-row">
-          <input id="expr" spellcheck="false" autocomplete="off" placeholder="e.g. A*B, eig(A), rref(M)">
+          <input id="expr" spellcheck="false" autocomplete="off" placeholder="e.g. A*B, eig(A), [1 2; 3 4]*[5; 6]">
           <button id="run">Go</button>
         </div>
         <div id="status"></div>
@@ -85,14 +85,10 @@
         <div id="matrixview"></div>
       </div>
       <div id="sandbox-wrap" hidden>
-        <div class="wb-input">
-          <input id="wb-expr" spellcheck="false" autocomplete="off" placeholder="[1 2; 3 4] * [5; 6]">
-          <button id="wb-go">Go</button>
-        </div>
-        <div class="wb-hint">Type matrices directly — spaces or commas between entries, <code>;</code> between rows:
-          <code>[1 2]</code> is a row, <code>[1; 2]</code> a column, <code>[1 2; 3 4]</code> a 2×2.
-          Named objects (<code>A</code>, <code>v</code>, …) and functions (<code>rref</code>, <code>eig</code>, …) work here too.</div>
-        <div id="wb-status"></div>
+        <div class="wb-hint">Whiteboard view — driven by the <b>Expression</b> box on the left, with all your objects.
+          Inline matrices work there too: <code>[1 2]</code> is a row, <code>[1; 2]</code> a column,
+          <code>[1 2; 3 4]</code> a 2×2 (<code>;</code> separates rows). The equation previews here as you type;
+          press <b>Go</b> to step through it.</div>
         <div id="wb-preview"></div>
         <div id="wb-view"></div>
       </div>
